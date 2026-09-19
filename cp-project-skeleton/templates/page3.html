@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div id="history"></div>
+
+<div id="detail" style="display:none;">
+  <h2 id="detail-title"></h2>
+
+  <p id="detail-info"></p>
+
+  <div id="detail-answers"></div>
+
+  <br>
+
+  <button type="button" onclick="showHistory()">กลับไปประวัติการเล่น</button>
+</div>
+
+<script>
+
+function showHistory() {
+
+  document.getElementById("history").style.display = "block";
+  document.getElementById("detail").style.display = "none";
+
+  let history = JSON.parse(localStorage.getItem("gameHistory")) || [];
+
+  let historyHTML = "";
+
+  if (history.length === 0) {
+    historyHTML = "<p>ยังไม่มีประวัติการเล่น</p>";
+  } else {
+
+    for (let i = 0; i < history.length; i++) {
+
+      let game = history[i];
+
+      historyHTML +=
+        "<div style='margin-bottom:15px;'>" +
+        "<button type='button' onclick='showDetail(" + i + ")'>" +
+        "เกมที่ " + game.gameNumber +
+        " | " + game.difficulty +
+        " | " + game.questionCount + " คำ" +
+        " | คะแนน " + game.score + "%" +
+        "</button>" +
+        "</div>";
+    }
+  }
+
+  document.getElementById("history").innerHTML = historyHTML;
+}
+
+function showDetail(index) {
+
+  let history = JSON.parse(localStorage.getItem("gameHistory")) || [];
+
+  let game = history[index];
+
+  document.getElementById("history").style.display = "none";
+  document.getElementById("detail").style.display = "block";
+
+  document.getElementById("detail-title").textContent =
+    "เกมที่ " + game.gameNumber;
+
+  document.getElementById("detail-info").textContent =
+    game.difficulty + " | " +
+    game.questionCount + " คำ | " +
+    "ถูก " + game.correct +
+    " | ผิด " + game.wrong +
+    " | คะแนน " + game.score + "%";
+
+  let answersHTML = "";
+
+  for (let i = 0; i < game.answers.length; i++) {
+
+    let item = game.answers[i];
+
+    if (item.correct) {
+
+      answersHTML +=
+        "<p style='color:green;'>" +
+        (i + 1) + ". " +
+        item.word +
+        " = " +
+        item.answer +
+        " ✓ ถูก" +
+        "</p>";
+
+    } else {
+
+      answersHTML +=
+        "<p style='color:red;'>" +
+        (i + 1) + ". " +
+        item.word +
+        " = " +
+        item.answer +
+        " ✗ ผิด" +
+        "<br>คำตอบที่ถูก : " +
+        item.correctAnswer +
+        "</p>";
+    }
+  }
+
+  document.getElementById("detail-answers").innerHTML = answersHTML;
+}
+
+showHistory();
+
+</script>
+
+{% endblock %}  

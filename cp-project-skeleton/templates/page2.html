@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>{{ title }}</h1>
+
+<div id="level-page">
+
+  <h2>{{ description }}</h2>
+
+  <div>
+    <label>
+      <input type="radio" name="difficulty" value="easy">
+      ง่าย
+    </label>
+  </div>
+
+  <div>
+    <label>
+      <input type="radio" name="difficulty" value="medium">
+      ปานกลาง
+    </label>
+  </div>
+
+  <div>
+    <label>
+      <input type="radio" name="difficulty" value="hard">
+      ยาก
+    </label>
+  </div>
+
+  <br>
+
+  <h2>ระดับความยาก</h2>
+
+  <p>ง่าย : มีคำศัพท์จำนวน 10 คำ เวลาจำกัด 5 นาที</p>
+
+  <p>ปานกลาง : มีคำศัพท์จำนวน 20 คำ เวลาจำกัด 10 นาที</p>
+
+  <p>ยาก : มีคำศัพท์จำนวน 30 คำ เวลาจำกัด 10 นาที</p>
+
+  <h2>วิธีการเล่น</h2>
+
+  <p>1. เลือกระดับความยากที่ต้องการเล่น</p>
+
+  <p>2. กดปุ่ม "เริ่ม" เพื่อเริ่มการทดสอบ</p>
+
+  <p>3. ระบบจะสุ่มคำศัพท์ภาษาอังกฤษตามจำนวนของระดับที่เลือก</p>
+
+  <p>4. เติมคำแปลภาษาไทยลงในช่องคำตอบของคำศัพท์แต่ละคำ</p>
+
+  <p>5. สามารถกดปุ่มย้อนกลับหรือไปข้างหน้าเพื่อเปลี่ยนข้อได้</p>
+
+  <p>6. ต้องทำแบบทดสอบให้เสร็จภายในเวลาที่กำหนด</p>
+
+  <p>7. เมื่อทำเสร็จแล้วให้กดปุ่ม "เสร็จสิ้น" เพื่อดูผลการทดสอบ</p>
+
+  <br>
+
+  <button type="button" onclick="startGame()">เริ่ม</button>
+
+</div>
+
+<div id="game-page" style="display:none;">
+
+  <h2>แบบทดสอบคำศัพท์</h2>
+
+  <p>เหลือเวลา: <span id="timer">00:00</span></p>
+
+  <h2 id="word"></h2>
+
+  <input type="text" id="answer" placeholder="พิมพ์คำแปลภาษาไทย">
+
+  <br><br>
+
+  <button type="button" onclick="previousWord()">←</button>
+  <button type="button" onclick="nextWord()">→</button>
+
+  <p id="number"></p>
+
+  <button type="button" onclick="finishGame()">เสร็จสิ้น</button>
+
+</div>
+
+<div id="result-page" style="display:none;">
+
+  <h2>ผลการทดสอบ</h2>
+
+  <p>ถูก: <span id="correct"></span></p>
+  <p>ผิด: <span id="wrong"></span></p>
+  <p>คะแนน: <span id="score"></span></p>
+
+  <div id="answers"></div>
+
+  <br>
+
+  <button type="button" onclick="location.reload()">เล่นอีกครั้ง</button>
+
+  <button type="button" onclick="location.href='/'">กลับไปหน้าหลัก</button>
+
+</div>
+
+<script>
+
+let questions = [];
+let current = 0;
+let answers = [];
+let timeLeft = 0;
+let timer;
+
+const wordData = [
+  ["security", "ความปลอดภัย"],
+  ["routine", "กิจวัตร"],
+  ["appointment", "นัดหมาย"],
+  ["convenient", "สะดวก"],
+  ["schedule", "ตารางเวลา / กำหนดการ"],
+  ["frequently", "บ่อยครั้ง"],
+  ["occasionally", "เป็นครั้งคราว"],
+  ["prepare", "เตรียม"],
+  ["organize", "จัดระเบียบ"],
+  ["manage", "จัดการ"],
+  ["avoid", "หลีกเลี่ยง"],
+  ["maintain", "รักษา / คงไว้"],
+  ["require", "ต้องการ / จำเป็นต้อง"],
+  ["prefer", "ชอบมากกว่า"],
+  ["available", "มีอยู่ / พร้อมใช้งาน"],
+  ["responsible", "รับผิดชอบ"],
+  ["necessary", "จำเป็น"],
+  ["immediately", "ทันที"],
+  ["ordinary", "ธรรมดา / ทั่วไป"],
+  ["improve", "ปรับปรุง / พัฒนา"]
+];
+
+function startGame() {
+
+  let selected = document.querySelector('input[name="difficulty"]:checked');
+
+  if (!selected) {
+    alert("กรุณาเลือกระดับความยากก่อน");
+    return;
+  }
+
+  if (selected.value === "easy") {
+    questions = wordData.slice(0, 10);
+    timeLeft = 300;
+  } else if (selected.value === "medium") {
+    questions = wordData.slice(0, 20);
+    timeLeft = 600;
+  } else {
+    questions = wordData.slice(0, 20);
+    timeLeft = 600;
+  }
+
+  answers = new Array(questions.length).fill("");
+
+  document.getElementById("level-page").style.display = "none";
+  document.getElementById("game-page").style.display = "block";
+
+  showWord();
+
+  timer = setInterval(function() {
+
+    timeLeft--;
+
+    let minutes = Math.floor(timeLeft / 60);
+    let seconds = timeLeft % 60;
+
+    document.getElementById("timer").textContent =
+      String(minutes).padStart(2, "0") + ":" +
+      String(seconds).padStart(2, "0");
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      finishGame();
+    }
+
+  }, 1000);
+}
+
+function showWord() {
+
+  document.getElementById("word").textContent = questions[current][0];
+
+  document.getElementById("answer").value = answers[current];
+
+  document.getElementById("number").textContent =
+    (current + 1) + " / " + questions.length;
+}
+
+function saveAnswer() {
+  answers[current] = document.getElementById("answer").value;
+}
+
+function previousWord() {
+
+  saveAnswer();
+
+  if (current > 0) {
+    current--;
+    showWord();
+  }
+}
+
+function nextWord() {
+
+  saveAnswer();
+
+  if (current < questions.length - 1) {
+    current++;
+    showWord();
+  }
+}
+
+function finishGame() {
+
+  saveAnswer();
+
+  clearInterval(timer);
+
+  document.getElementById("game-page").style.display = "none";
+  document.getElementById("result-page").style.display = "block";
+
+  let correct = 0;
+
+  for (let i = 0; i < questions.length; i++) {
+
+    if (answers[i].trim() === questions[i][1]) {
+      correct++;
+    }
+  }
+
+  let wrong = questions.length - correct;
+  let score = Math.round((correct / questions.length) * 100);
+
+  document.getElementById("correct").textContent = correct;
+  document.getElementById("wrong").textContent = wrong;
+  document.getElementById("score").textContent = score + "%";
+
+  let resultHTML = "";
+
+  for (let i = 0; i < questions.length; i++) {
+
+    let isCorrect = answers[i].trim() === questions[i][1];
+
+    resultHTML +=
+      "<p style='color:" + (isCorrect ? "green" : "red") + "'>" +
+      (i + 1) + ". " +
+      questions[i][0] +
+      " = " +
+      answers[i] +
+      " (" +
+      questions[i][1] +
+      ")" +
+      "</p>";
+  }
+
+  document.getElementById("answers").innerHTML = resultHTML;
+}
+
+</script>
+
+{% endblock %}
