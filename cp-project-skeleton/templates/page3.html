@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
+
 <h1>{{ title }}</h1>
 
 <div id="history"></div>
 
 <div id="detail" style="display:none;">
+
   <h2 id="detail-title"></h2>
 
   <p id="detail-info"></p>
@@ -14,61 +16,165 @@
 
   <br>
 
-  <button type="button" onclick="showHistory()">กลับไปประวัติการเล่น</button>
+  <button type="button" onclick="showHistory()">
+    กลับไปประวัติการเล่น
+  </button>
+
 </div>
 
+<style>
+
+#history {
+  width: 850px;
+}
+
+.history-item {
+  margin-bottom: 12px;
+}
+
+.history-button {
+  width: 850px;
+  padding: 10px 18px;
+  font-size: 17px;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+#detail {
+  width: 700px;
+}
+
+</style>
+
 <script>
+
+function getHistory() {
+
+  return JSON.parse(localStorage.getItem("gameHistory")) || [];
+
+}
 
 function showHistory() {
 
   document.getElementById("history").style.display = "block";
   document.getElementById("detail").style.display = "none";
 
-  let history = JSON.parse(localStorage.getItem("gameHistory")) || [];
+  let history = getHistory();
+
+  history.sort(function(a, b) {
+
+    return b.gameNumber - a.gameNumber;
+
+  });
 
   let historyHTML = "";
 
   if (history.length === 0) {
+
     historyHTML = "<p>ยังไม่มีประวัติการเล่น</p>";
+
   } else {
 
     for (let i = 0; i < history.length; i++) {
 
       let game = history[i];
 
+      let difficulty = game.difficulty;
+
+      if (difficulty === "easy") {
+        difficulty = "ง่าย";
+      } else if (difficulty === "medium") {
+        difficulty = "ปานกลาง";
+      } else if (difficulty === "hard") {
+        difficulty = "ยาก";
+      }
+
+      let score = String(game.score).replace("%", "");
+
       historyHTML +=
-        "<div style='margin-bottom:15px;'>" +
-        "<button type='button' onclick='showDetail(" + i + ")'>" +
-        "เกมที่ " + game.gameNumber +
-        " | " + game.difficulty +
-        " | " + game.questionCount + " คำ" +
-        " | คะแนน " + game.score + "%" +
+        "<div class='history-item'>" +
+
+        "<button type='button' class='history-button' onclick='showDetail(" +
+        game.gameNumber +
+        ")'>" +
+
+        "เกมที่ " +
+        game.gameNumber +
+        " | " +
+        difficulty +
+        " | " +
+        game.questionCount +
+        " คำ" +
+        " | คะแนน " +
+        score +
+        " | " +
+        (game.date || "-") +
+
         "</button>" +
+
         "</div>";
     }
   }
 
-  document.getElementById("history").innerHTML = historyHTML;
+  document.getElementById("history").innerHTML =
+    historyHTML;
+
 }
 
-function showDetail(index) {
+function showDetail(gameNumber) {
 
-  let history = JSON.parse(localStorage.getItem("gameHistory")) || [];
+  let history = getHistory();
 
-  let game = history[index];
+  let game = null;
+
+  for (let i = 0; i < history.length; i++) {
+
+    if (history[i].gameNumber === gameNumber) {
+
+      game = history[i];
+
+      break;
+    }
+  }
+
+  if (!game) {
+    return;
+  }
 
   document.getElementById("history").style.display = "none";
+
   document.getElementById("detail").style.display = "block";
 
   document.getElementById("detail-title").textContent =
     "เกมที่ " + game.gameNumber;
 
+  let difficulty = game.difficulty;
+
+  if (difficulty === "easy") {
+    difficulty = "ง่าย";
+  } else if (difficulty === "medium") {
+    difficulty = "ปานกลาง";
+  } else if (difficulty === "hard") {
+    difficulty = "ยาก";
+  }
+
+  let score = String(game.score).replace("%", "");
+
   document.getElementById("detail-info").textContent =
-    game.difficulty + " | " +
-    game.questionCount + " คำ | " +
-    "ถูก " + game.correct +
-    " | ผิด " + game.wrong +
-    " | คะแนน " + game.score + "%";
+    (game.date || "-") +
+    " | " +
+    difficulty +
+    " | " +
+    game.questionCount +
+    " คำ | " +
+    "ถูก " +
+    game.correct +
+    " | " +
+    "ผิด " +
+    game.wrong +
+    " | " +
+    "คะแนน " +
+    score;
 
   let answersHTML = "";
 
@@ -80,7 +186,8 @@ function showDetail(index) {
 
       answersHTML +=
         "<p style='color:green;'>" +
-        (i + 1) + ". " +
+        (i + 1) +
+        ". " +
         item.word +
         " = " +
         item.answer +
@@ -91,22 +198,26 @@ function showDetail(index) {
 
       answersHTML +=
         "<p style='color:red;'>" +
-        (i + 1) + ". " +
+        (i + 1) +
+        ". " +
         item.word +
         " = " +
         item.answer +
         " ✗ ผิด" +
-        "<br>คำตอบที่ถูก : " +
+        "<br>" +
+        "คำตอบที่ถูก : " +
         item.correctAnswer +
         "</p>";
     }
   }
 
-  document.getElementById("detail-answers").innerHTML = answersHTML;
+  document.getElementById("detail-answers").innerHTML =
+    answersHTML;
+
 }
 
 showHistory();
 
 </script>
 
-{% endblock %}  
+{% endblock %}

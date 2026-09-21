@@ -31,6 +31,10 @@
 
   <br>
 
+  <button type="button" onclick="startGame()">เริ่ม</button>
+
+  <br><br>
+
   <h2>ระดับความยาก</h2>
 
   <p>ง่าย : มีคำศัพท์จำนวน 10 คำ เวลาจำกัด 5 นาที</p>
@@ -51,13 +55,11 @@
 
   <p>5. สามารถกดปุ่มย้อนกลับหรือไปข้างหน้าเพื่อเปลี่ยนข้อได้</p>
 
-  <p>6. ต้องทำแบบทดสอบให้เสร็จภายในเวลาที่กำหนด</p>
+  <p>6. สามารถกด Enter เพื่อไปยังคำศัพท์ข้อถัดไปได้</p>
 
-  <p>7. เมื่อทำเสร็จแล้วให้กดปุ่ม "เสร็จสิ้น" เพื่อดูผลการทดสอบ</p>
+  <p>7. ต้องทำแบบทดสอบให้เสร็จภายในเวลาที่กำหนด</p>
 
-  <br>
-
-  <button type="button" onclick="startGame()">เริ่ม</button>
+  <p>8. เมื่อทำเสร็จแล้วให้กดปุ่ม "เสร็จสิ้น" เพื่อดูผลการทดสอบ</p>
 
 </div>
 
@@ -87,7 +89,9 @@
   <h2>ผลการทดสอบ</h2>
 
   <p>ถูก: <span id="correct"></span></p>
+
   <p>ผิด: <span id="wrong"></span></p>
+
   <p>คะแนน: <span id="score"></span></p>
 
   <div id="answers"></div>
@@ -100,6 +104,44 @@
 
 </div>
 
+<style>
+
+#game-page {
+  width: 600px;
+  margin: 40px auto;
+  text-align: center;
+}
+
+#game-page h2 {
+  font-size: 24px;
+}
+
+#word {
+  font-size: 26px;
+}
+
+#answer {
+  width: 320px;
+  height: 36px;
+  font-size: 18px;
+  text-align: center;
+}
+
+#game-page button {
+  font-size: 16px;
+  padding: 5px 12px;
+}
+
+#number {
+  font-size: 16px;
+}
+
+</style>
+
+<script id="word-data" type="application/json">
+{{ words_json | safe }}
+</script>
+
 <script>
 
 let questions = [];
@@ -107,53 +149,71 @@ let current = 0;
 let answers = [];
 let timeLeft = 0;
 let timer;
+let gameFinished = false;
+let selectedDifficulty = "";
 
-const wordData = [
-  ["security", "ความปลอดภัย"],
-  ["routine", "กิจวัตร"],
-  ["appointment", "นัดหมาย"],
-  ["convenient", "สะดวก"],
-  ["schedule", "ตารางเวลา / กำหนดการ"],
-  ["frequently", "บ่อยครั้ง"],
-  ["occasionally", "เป็นครั้งคราว"],
-  ["prepare", "เตรียม"],
-  ["organize", "จัดระเบียบ"],
-  ["manage", "จัดการ"],
-  ["avoid", "หลีกเลี่ยง"],
-  ["maintain", "รักษา / คงไว้"],
-  ["require", "ต้องการ / จำเป็นต้อง"],
-  ["prefer", "ชอบมากกว่า"],
-  ["available", "มีอยู่ / พร้อมใช้งาน"],
-  ["responsible", "รับผิดชอบ"],
-  ["necessary", "จำเป็น"],
-  ["immediately", "ทันที"],
-  ["ordinary", "ธรรมดา / ทั่วไป"],
-  ["improve", "ปรับปรุง / พัฒนา"]
-];
+const wordData =
+  JSON.parse(document.getElementById("word-data").textContent);
+
+function shuffle(array) {
+
+  let result = [...array];
+
+  for (let i = result.length - 1; i > 0; i--) {
+
+    let j = Math.floor(Math.random() * (i + 1));
+
+    let temp = result[i];
+    result[i] = result[j];
+    result[j] = temp;
+  }
+
+  return result;
+}
 
 function startGame() {
 
-  let selected = document.querySelector('input[name="difficulty"]:checked');
+  let selected =
+    document.querySelector('input[name="difficulty"]:checked');
 
   if (!selected) {
+
     alert("กรุณาเลือกระดับความยากก่อน");
+
     return;
   }
 
+  selectedDifficulty = selected.value;
+
+  let shuffledWords = shuffle(wordData);
+
   if (selected.value === "easy") {
-    questions = wordData.slice(0, 10);
+
+    questions = shuffledWords.slice(0, 10);
+
     timeLeft = 300;
+
   } else if (selected.value === "medium") {
-    questions = wordData.slice(0, 20);
+
+    questions = shuffledWords.slice(0, 20);
+
     timeLeft = 600;
+
   } else {
-    questions = wordData.slice(0, 20);
+
+    questions = shuffledWords.slice(0, 30);
+
     timeLeft = 600;
   }
 
+  current = 0;
+
   answers = new Array(questions.length).fill("");
 
+  gameFinished = false;
+
   document.getElementById("level-page").style.display = "none";
+
   document.getElementById("game-page").style.display = "block";
 
   showWord();
@@ -163,6 +223,7 @@ function startGame() {
     timeLeft--;
 
     let minutes = Math.floor(timeLeft / 60);
+
     let seconds = timeLeft % 60;
 
     document.getElementById("timer").textContent =
@@ -170,7 +231,9 @@ function startGame() {
       String(seconds).padStart(2, "0");
 
     if (timeLeft <= 0) {
+
       clearInterval(timer);
+
       finishGame();
     }
 
@@ -179,16 +242,22 @@ function startGame() {
 
 function showWord() {
 
-  document.getElementById("word").textContent = questions[current][0];
+  document.getElementById("word").textContent =
+    questions[current].word;
 
-  document.getElementById("answer").value = answers[current];
+  document.getElementById("answer").value =
+    answers[current];
 
   document.getElementById("number").textContent =
     (current + 1) + " / " + questions.length;
+
+  document.getElementById("answer").focus();
 }
 
 function saveAnswer() {
-  answers[current] = document.getElementById("answer").value;
+
+  answers[current] =
+    document.getElementById("answer").value;
 }
 
 function previousWord() {
@@ -196,7 +265,9 @@ function previousWord() {
   saveAnswer();
 
   if (current > 0) {
+
     current--;
+
     showWord();
   }
 }
@@ -206,55 +277,159 @@ function nextWord() {
   saveAnswer();
 
   if (current < questions.length - 1) {
+
     current++;
+
     showWord();
   }
 }
 
+document.getElementById("answer").addEventListener("keydown", function(event) {
+
+  if (event.key === "Enter") {
+
+    event.preventDefault();
+
+    nextWord();
+  }
+
+});
+
+function saveGameHistory(correct, wrong) {
+
+  let history =
+    JSON.parse(localStorage.getItem("gameHistory")) || [];
+
+  let gameNumber = 1;
+
+  if (history.length > 0) {
+
+    let biggestNumber = 0;
+
+    for (let i = 0; i < history.length; i++) {
+
+      if (history[i].gameNumber > biggestNumber) {
+
+        biggestNumber = history[i].gameNumber;
+      }
+    }
+
+    gameNumber = biggestNumber + 1;
+  }
+
+  let today = new Date();
+
+  let day =
+    String(today.getDate()).padStart(2, "0");
+
+  let month =
+    String(today.getMonth() + 1).padStart(2, "0");
+
+  let year =
+    today.getFullYear() + 543;
+
+  let gameAnswers = [];
+
+  for (let i = 0; i < questions.length; i++) {
+
+    let userAnswer = answers[i].trim();
+
+    let correctAnswer = questions[i].hint_th;
+
+    gameAnswers.push({
+      "word": questions[i].word,
+      "answer": userAnswer,
+      "correctAnswer": correctAnswer,
+      "correct": userAnswer === correctAnswer
+    });
+  }
+
+  let game = {
+    "gameNumber": gameNumber,
+    "difficulty": selectedDifficulty,
+    "questionCount": questions.length,
+    "correct": correct,
+    "wrong": wrong,
+    "score": correct + "/" + questions.length,
+    "date": day + "/" + month + "/" + year,
+    "answers": gameAnswers
+  };
+
+  history.unshift(game);
+
+  if (history.length > 10) {
+
+    history = history.slice(0, 10);
+  }
+
+  localStorage.setItem(
+    "gameHistory",
+    JSON.stringify(history)
+  );
+}
+
 function finishGame() {
+
+  if (gameFinished) {
+    return;
+  }
+
+  gameFinished = true;
 
   saveAnswer();
 
   clearInterval(timer);
 
-  document.getElementById("game-page").style.display = "none";
-  document.getElementById("result-page").style.display = "block";
-
   let correct = 0;
 
   for (let i = 0; i < questions.length; i++) {
 
-    if (answers[i].trim() === questions[i][1]) {
+    if (answers[i].trim() === questions[i].hint_th) {
+
       correct++;
     }
   }
 
   let wrong = questions.length - correct;
-  let score = Math.round((correct / questions.length) * 100);
 
-  document.getElementById("correct").textContent = correct;
-  document.getElementById("wrong").textContent = wrong;
-  document.getElementById("score").textContent = score + "%";
+  saveGameHistory(correct, wrong);
+
+  document.getElementById("game-page").style.display = "none";
+
+  document.getElementById("result-page").style.display = "block";
+
+  document.getElementById("correct").textContent =
+    correct;
+
+  document.getElementById("wrong").textContent =
+    wrong;
+
+  document.getElementById("score").textContent =
+    correct + "/" + questions.length;
 
   let resultHTML = "";
 
   for (let i = 0; i < questions.length; i++) {
 
-    let isCorrect = answers[i].trim() === questions[i][1];
+    let isCorrect =
+      answers[i].trim() === questions[i].hint_th;
 
     resultHTML +=
-      "<p style='color:" + (isCorrect ? "green" : "red") + "'>" +
+      "<p style='color:" +
+      (isCorrect ? "green" : "red") +
+      "'>" +
       (i + 1) + ". " +
-      questions[i][0] +
+      questions[i].word +
       " = " +
       answers[i] +
       " (" +
-      questions[i][1] +
+      questions[i].hint_th +
       ")" +
       "</p>";
   }
 
-  document.getElementById("answers").innerHTML = resultHTML;
+  document.getElementById("answers").innerHTML =
+    resultHTML;
 }
 
 </script>

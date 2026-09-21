@@ -1,7 +1,8 @@
 """
 Page 2: Recall and test.
 """
-from models import VocabularyManager
+import json
+from pages.page1 import build as build_page1
 
 TITLE = "แบบทดสอบคำศัพท์"
 
@@ -10,30 +11,18 @@ def build(query=None):
     if query is None:
         query = {}
 
-    sample_data = [
-        {"word": "security", "length": 8, "difficulty": "easy", "category": "Daily Life", "hint_th": "ความปลอดภัย", "times_used": 0, "is_picked": "no"},
-        {"word": "routine", "length": 7, "difficulty": "easy", "category": "Daily Life", "hint_th": "กิจวัตร", "times_used": 0, "is_picked": "no"},
-        {"word": "appointment", "length": 11, "difficulty": "easy", "category": "Daily Life", "hint_th": "นัดหมาย", "times_used": 0, "is_picked": "no"},
-        {"word": "convenient", "length": 10, "difficulty": "easy", "category": "Daily Life", "hint_th": "สะดวก", "times_used": 0, "is_picked": "no"},
-        {"word": "schedule", "length": 8, "difficulty": "easy", "category": "Daily Life", "hint_th": "ตารางเวลา / กำหนดการ", "times_used": 0, "is_picked": "no"},
-        {"word": "frequently", "length": 10, "difficulty": "easy", "category": "Daily Life", "hint_th": "บ่อยครั้ง", "times_used": 0, "is_picked": "no"},
-        {"word": "occasionally", "length": 11, "difficulty": "easy", "category": "Daily Life", "hint_th": "เป็นครั้งคราว", "times_used": 0, "is_picked": "no"},
-        {"word": "prepare", "length": 7, "difficulty": "easy", "category": "Daily Life", "hint_th": "เตรียม", "times_used": 0, "is_picked": "no"},
-        {"word": "organize", "length": 8, "difficulty": "easy", "category": "Daily Life", "hint_th": "จัดระเบียบ", "times_used": 0, "is_picked": "no"},
-        {"word": "manage", "length": 6, "difficulty": "easy", "category": "Daily Life", "hint_th": "จัดการ", "times_used": 0, "is_picked": "no"},
-        {"word": "avoid", "length": 5, "difficulty": "medium", "category": "Daily Life", "hint_th": "หลีกเลี่ยง", "times_used": 0, "is_picked": "no"},
-        {"word": "maintain", "length": 8, "difficulty": "medium", "category": "Daily Life", "hint_th": "รักษา / คงไว้", "times_used": 0, "is_picked": "no"},
-        {"word": "require", "length": 7, "difficulty": "medium", "category": "Daily Life", "hint_th": "ต้องการ / จำเป็นต้อง", "times_used": 0, "is_picked": "no"},
-        {"word": "prefer", "length": 6, "difficulty": "medium", "category": "Daily Life", "hint_th": "ชอบมากกว่า", "times_used": 0, "is_picked": "no"},
-        {"word": "available", "length": 9, "difficulty": "medium", "category": "Daily Life", "hint_th": "มีอยู่ / พร้อมใช้งาน", "times_used": 0, "is_picked": "no"},
-        {"word": "responsible", "length": 11, "difficulty": "medium", "category": "Daily Life", "hint_th": "รับผิดชอบ", "times_used": 0, "is_picked": "no"},
-        {"word": "necessary", "length": 9, "difficulty": "medium", "category": "Daily Life", "hint_th": "จำเป็น", "times_used": 0, "is_picked": "no"},
-        {"word": "immediately", "length": 11, "difficulty": "medium", "category": "Daily Life", "hint_th": "ทันที", "times_used": 0, "is_picked": "no"},
-        {"word": "ordinary", "length": 8, "difficulty": "medium", "category": "Daily Life", "hint_th": "ธรรมดา / ทั่วไป", "times_used": 0, "is_picked": "no"},
-        {"word": "improve", "length": 7, "difficulty": "medium", "category": "Daily Life", "hint_th": "ปรับปรุง / พัฒนา", "times_used": 0, "is_picked": "no"}
-    ]
+    page1_data = build_page1()
 
-    manager = VocabularyManager(sample_data)
+    words = []
+
+    for category in page1_data["categories"]:
+        for item in category["words"]:
+            parts = item.split(" = ", 1)
+
+            words.append({
+                "word": parts[0],
+                "hint_th": parts[1]
+            })
 
     return {
         "description": "เลือกระดับความยาก",
@@ -41,5 +30,6 @@ def build(query=None):
             {"name": "ง่าย", "value": "easy", "words": 10, "time": 300},
             {"name": "ปานกลาง", "value": "medium", "words": 20, "time": 600},
             {"name": "ยาก", "value": "hard", "words": 30, "time": 600}
-        ]
+        ],
+        "words_json": json.dumps(words, ensure_ascii=False)
     }
