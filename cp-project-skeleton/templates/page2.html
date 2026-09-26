@@ -46,19 +46,12 @@
   <h2>วิธีการเล่น</h2>
 
   <p>1. เลือกระดับความยากที่ต้องการเล่น</p>
-
   <p>2. กดปุ่ม "เริ่ม" เพื่อเริ่มการทดสอบ</p>
-
   <p>3. ระบบจะสุ่มคำศัพท์ภาษาอังกฤษตามจำนวนของระดับที่เลือก</p>
-
   <p>4. เติมคำแปลภาษาไทยลงในช่องคำตอบของคำศัพท์แต่ละคำ</p>
-
   <p>5. สามารถกดปุ่มย้อนกลับหรือไปข้างหน้าเพื่อเปลี่ยนข้อได้</p>
-
   <p>6. สามารถกด Enter เพื่อไปยังคำศัพท์ข้อถัดไปได้</p>
-
   <p>7. ต้องทำแบบทดสอบให้เสร็จภายในเวลาที่กำหนด</p>
-
   <p>8. เมื่อทำเสร็จแล้วให้กดปุ่ม "เสร็จสิ้น" เพื่อดูผลการทดสอบ</p>
 
 </div>
@@ -89,9 +82,7 @@
   <h2>ผลการทดสอบ</h2>
 
   <p>ถูก: <span id="correct"></span></p>
-
   <p>ผิด: <span id="wrong"></span></p>
-
   <p>คะแนน: <span id="score"></span></p>
 
   <div id="answers"></div>
@@ -99,7 +90,6 @@
   <br>
 
   <button type="button" onclick="location.reload()">เล่นอีกครั้ง</button>
-
   <button type="button" onclick="location.href='/'">กลับไปหน้าหลัก</button>
 
 </div>
@@ -134,6 +124,23 @@
 
 #number {
   font-size: 16px;
+}
+
+#answers {
+  text-align: left;
+}
+
+.result-correct {
+  color: green;
+}
+
+.result-wrong {
+  color: red;
+}
+
+.result-correct-answer {
+  color: red;
+  margin-top: -10px;
 }
 
 </style>
@@ -213,17 +220,22 @@ function startGame() {
   gameFinished = false;
 
   document.getElementById("level-page").style.display = "none";
-
   document.getElementById("game-page").style.display = "block";
 
   showWord();
+
+  let minutes = Math.floor(timeLeft / 60);
+  let seconds = timeLeft % 60;
+
+  document.getElementById("timer").textContent =
+    String(minutes).padStart(2, "0") + ":" +
+    String(seconds).padStart(2, "0");
 
   timer = setInterval(function() {
 
     timeLeft--;
 
     let minutes = Math.floor(timeLeft / 60);
-
     let seconds = timeLeft % 60;
 
     document.getElementById("timer").textContent =
@@ -242,8 +254,19 @@ function startGame() {
 
 function showWord() {
 
-  document.getElementById("word").textContent =
+  let wordText =
     questions[current].word;
+
+  if (questions[current].part_of_speech) {
+
+    wordText +=
+      " (" +
+      questions[current].part_of_speech +
+      ")";
+  }
+
+  document.getElementById("word").textContent =
+    wordText;
 
   document.getElementById("answer").value =
     answers[current];
@@ -290,10 +313,54 @@ document.getElementById("answer").addEventListener("keydown", function(event) {
 
     event.preventDefault();
 
-    nextWord();
+    saveAnswer();
+
+    if (current === questions.length - 1) {
+
+      finishGame();
+
+    } else {
+
+      nextWord();
+    }
   }
 
 });
+
+function isAnswerCorrect(userAnswer, correctAnswer) {
+
+  let user =
+    userAnswer.trim();
+
+  let correct =
+    correctAnswer.trim();
+
+  if (user === correct) {
+
+    return true;
+  }
+
+  let acceptedAnswers =
+    correct.split("/").map(function(answer) {
+
+      return answer.trim();
+
+    }).filter(function(answer) {
+
+      return answer !== "";
+
+    });
+
+  for (let i = 0; i < acceptedAnswers.length; i++) {
+
+    if (user === acceptedAnswers[i]) {
+
+      return true;
+    }
+  }
+
+  return false;
+}
 
 function saveGameHistory(correct, wrong) {
 
@@ -332,15 +399,21 @@ function saveGameHistory(correct, wrong) {
 
   for (let i = 0; i < questions.length; i++) {
 
-    let userAnswer = answers[i].trim();
+    let userAnswer =
+      answers[i].trim();
 
-    let correctAnswer = questions[i].hint_th;
+    let correctAnswer =
+      questions[i].hint_th;
 
     gameAnswers.push({
       "word": questions[i].word,
+      "part_of_speech": questions[i].part_of_speech,
       "answer": userAnswer,
       "correctAnswer": correctAnswer,
-      "correct": userAnswer === correctAnswer
+      "correct": isAnswerCorrect(
+        userAnswer,
+        correctAnswer
+      )
     });
   }
 
@@ -371,6 +444,7 @@ function saveGameHistory(correct, wrong) {
 function finishGame() {
 
   if (gameFinished) {
+
     return;
   }
 
@@ -384,18 +458,26 @@ function finishGame() {
 
   for (let i = 0; i < questions.length; i++) {
 
-    if (answers[i].trim() === questions[i].hint_th) {
+    if (
+      isAnswerCorrect(
+        answers[i],
+        questions[i].hint_th
+      )
+    ) {
 
       correct++;
     }
   }
 
-  let wrong = questions.length - correct;
+  let wrong =
+    questions.length - correct;
 
-  saveGameHistory(correct, wrong);
+  saveGameHistory(
+    correct,
+    wrong
+  );
 
   document.getElementById("game-page").style.display = "none";
-
   document.getElementById("result-page").style.display = "block";
 
   document.getElementById("correct").textContent =
@@ -412,20 +494,54 @@ function finishGame() {
   for (let i = 0; i < questions.length; i++) {
 
     let isCorrect =
-      answers[i].trim() === questions[i].hint_th;
+      isAnswerCorrect(
+        answers[i],
+        questions[i].hint_th
+      );
 
-    resultHTML +=
-      "<p style='color:" +
-      (isCorrect ? "green" : "red") +
-      "'>" +
-      (i + 1) + ". " +
-      questions[i].word +
-      " = " +
-      answers[i] +
-      " (" +
-      questions[i].hint_th +
-      ")" +
-      "</p>";
+    let userAnswer =
+      answers[i].trim();
+
+    let wordText =
+      questions[i].word;
+
+    if (questions[i].part_of_speech) {
+
+      wordText +=
+        " (" +
+        questions[i].part_of_speech +
+        ")";
+    }
+
+    if (isCorrect) {
+
+      resultHTML +=
+        "<p class='result-correct'>" +
+        (i + 1) +
+        ". " +
+        wordText +
+        " = " +
+        (userAnswer || "-") +
+        " ✓ ถูก" +
+        "</p>";
+
+    } else {
+
+      resultHTML +=
+        "<p class='result-wrong'>" +
+        (i + 1) +
+        ". " +
+        wordText +
+        " = " +
+        (userAnswer || "-") +
+        " ✕ ผิด" +
+        "</p>" +
+
+        "<p class='result-correct-answer'>" +
+        "คำตอบที่ถูก : " +
+        questions[i].hint_th +
+        "</p>";
+    }
   }
 
   document.getElementById("answers").innerHTML =

@@ -14,6 +14,7 @@ class Item:
         self.difficulty = data.get("difficulty", "easy")
         self.category = data.get("category", "noun")
         self.hint_th = data.get("hint_th", "")
+        self.part_of_speech = data.get("part_of_speech", "")
         self.times_used = int(data.get("times_used", 0))
         self.is_picked = data.get("is_picked", "no")
 
@@ -25,6 +26,7 @@ class Item:
             "difficulty": self.difficulty,
             "category": self.category,
             "hint_th": self.hint_th,
+            "part_of_speech": self.part_of_speech,
             "times_used": self.times_used,
             "is_picked": self.is_picked
         }

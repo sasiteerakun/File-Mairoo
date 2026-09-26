@@ -19,9 +19,18 @@ def build(query=None):
         for item in category["words"]:
             parts = item.split(" = ", 1)
 
+            word = parts[0]
+            hint_and_pos = parts[1]
+
+            hint_parts = hint_and_pos.rsplit(" (", 1)
+
+            hint_th = hint_parts[0]
+            part_of_speech = hint_parts[1].rstrip(")") if len(hint_parts) > 1 else ""
+
             words.append({
-                "word": parts[0],
-                "hint_th": parts[1]
+                "word": word,
+                "hint_th": hint_th,
+                "part_of_speech": part_of_speech
             })
 
     return {
